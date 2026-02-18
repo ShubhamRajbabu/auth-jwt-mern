@@ -3,62 +3,38 @@ import bcrypt from "bcryptjs";
 import User from "../models/user.model.js";
 import { JWT_ACCESS_TOKEN_EXPIRES_IN, JWT_REFRESH_TOKEN_EXPIRES_IN, JWT_SECRET_ACCESS_TOKEN, JWT_SECRET_REFRESH_TOKEN, NODE_ENV } from "../config/env/env.js";
 import Token from "../models/tokens.model.js";
+import { registerService } from "../services/auth.services.js";
 
-const registerController = async (req, res) => {
+const registerController = async (req, res, next) => {
+    const { username, email, password } = req.body;
+
     try {
-        const { username, email, password } = req.body;
+        const data = await registerService(username, email, password);
 
-        if (!username || !email || !password) {
-            return res.status(400).json({ message: "All fields are required" });
-        }
-
-        const isUserExist = await User.findOne({ email });
-        if (isUserExist) {
-            return res.status(400).json({ message: "User already exists" });
-        }
-        const hashPassword = await bcrypt.hash(password, 10);
-
-        const newUser = await User.create({
-            username, email, password: hashPassword
-        })
-        if (!newUser) {
-            return res.status(500).json({ message: "User registration failed" });
-        }
-
-        const accessToken = jwt.sign({ id: newUser._id }, JWT_SECRET_ACCESS_TOKEN, { expiresIn: JWT_ACCESS_TOKEN_EXPIRES_IN })
-        res.cookie("accessToken", accessToken, {
+        res.cookie("accessToken", data.accessToken, {
             httpOnly: true,
             secure: NODE_ENV === 'production',
-            sameSite: 'strict'
+            sameSite: 'strict',
+            path: '/'
         });
 
-        const refreshToken = jwt.sign({ id: newUser._id }, JWT_SECRET_REFRESH_TOKEN, { expiresIn: JWT_REFRESH_TOKEN_EXPIRES_IN })
-        const storeRefreshTokenIndb = await Token.create({
-            userId: newUser._id,
-            token: refreshToken
-        });
-
-        if (!storeRefreshTokenIndb) {
-            return res.status(500).json({ message: "Failed to store refresh token" });
-        }
-
-        res.cookie("refreshToken", refreshToken, {
+        res.cookie("refreshToken", data.refreshToken, {
             httpOnly: true,
             secure: NODE_ENV === 'production',
-            sameSite: 'strict'
+            sameSite: 'strict',
+            path: '/'
         });
 
         res.status(201).json({
             message: "User registered successfully",
             user: {
-                _id: newUser._id,
-                username: newUser.username,
-                email: newUser.email
+                _id: data.newUser._id,
+                username: data.newUser.username,
+                email: data.newUser.email
             }
         });
     } catch (error) {
-        console.error("Registration error:", error);
-        res.status(500).json({ message: "Internal server error" });
+        next(error);
     }
 }
 
