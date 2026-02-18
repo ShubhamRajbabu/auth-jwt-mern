@@ -80,11 +80,14 @@ const loginController = async (req, res) => {
             return res.status(400).json({ message: "Invalid User credentials" });
         }
 
+        await Token.deleteOne({ userId: isUserExist._id }); //not keeping multiple sessions of the same user, so deleting any existing refresh token for the user from db, if exists, before creating and storing new refresh token for the user in db
+
         const accessToken = jwt.sign({ id: isUserExist._id }, JWT_SECRET_ACCESS_TOKEN, { expiresIn: JWT_ACCESS_TOKEN_EXPIRES_IN })
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
             secure: NODE_ENV === 'production',
-            sameSite: 'strict'
+            sameSite: 'strict',
+            path: '/' // Set the path to '/' to make the cookie accessible across the entire domain
         });
 
         const refreshToken = jwt.sign({ id: isUserExist._id }, JWT_SECRET_REFRESH_TOKEN, { expiresIn: JWT_REFRESH_TOKEN_EXPIRES_IN })
