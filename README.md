@@ -1,5 +1,7 @@
 # Auth JWT MERN - Complete Documentation
 
+A secure JWT-based authentication backend built with Node.js, Express and MongoDB. Implements access + refresh tokens, bcrypt password hashing, and HTTP-only cookie storage — suitable as a starter auth API or a learning project.
+
 ## 📋 Table of Contents
 1. [Project Overview](#project-overview)
 2. [Project Structure](#project-structure)
@@ -926,6 +928,33 @@ curl -X POST http://localhost:5000/api/auth/register \
     "password": "password123"
   }'
 ```
+
+## 🧰 Repository Maintenance
+
+- **Add `.gitignore`**: A `.gitignore` file has been added to prevent committing sensitive files like `.env` and large folders like `node_modules/`.
+- **If `.env` was already tracked**: Untrack it and remove from the index with:
+
+```bash
+git rm --cached .env
+git commit -m "Remove .env from version control"
+```
+
+- **If `.DS_Store` or other OS/IDE files were committed**: Remove them from the index so `.gitignore` prevents future commits. For `.DS_Store` run:
+
+```bash
+git rm --cached .DS_Store
+git commit -m "Remove .DS_Store from repository"
+```
+
+- **To remove a file from all historical commits (optional)**: Use `git filter-repo` (recommended) or `bfg` — this rewrites history and requires force-push:
+
+```bash
+# Example with git filter-repo (install first):
+git filter-repo --path .DS_Store --invert-paths
+git push --force
+```
+
+- **Important**: Rewriting history affects collaborators. Prefer the simple `git rm --cached` approach unless you understand the implications.
 
 Expected Response:
 ```json
