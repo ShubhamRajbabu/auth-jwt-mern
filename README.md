@@ -43,12 +43,26 @@ auth-jwt-mern/
 │   │   └── env/
 │   │       └── env.js        # Environment variables loader
 │   ├── controllers/
-│   │   └── auth.controller.js # Business logic for authentication
+│   │   ├── auth.controller.js # Request handlers - delegates to services
+│   │   └── user.controller.js # User-related request handlers
+│   ├── services/
+│   │   ├── auth.services.js  # Business logic for authentication (register, login, etc.)
+│   │   └── token.service.js  # Token generation and management logic
+│   ├── repositories/
+│   │   ├── user.repository.js # Database operations for users
+│   │   └── token.repository.js # Database operations for tokens
 │   ├── models/
 │   │   ├── user.model.js     # User data schema
 │   │   └── tokens.model.js   # Refresh token storage schema
-│   └── routes/
-│       └── auth.routes.js    # API endpoints definition
+│   ├── middlewares/
+│   │   ├── auth.middleware.js # JWT verification middleware
+│   │   └── error.middleware.js # Error handling middleware
+│   ├── routes/
+│   │   ├── auth.routes.js    # Authentication API endpoints
+│   │   └── user.routes.js    # User API endpoints
+│   ├── utils/
+│   │   └── error.util.js     # Custom error handling utility
+│   └── app.js                # Express app configuration and middleware setup
 └── .env                      # Environment variables (not included, needs to be created)
 ```
 
@@ -118,11 +132,11 @@ Each package in `package.json` serves a specific purpose:
 
 ## 🏗️ Architecture & Flow
 
-### Three-Tier Architecture
+### Four-Tier Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    API Routes Layer                          │
+│                    Routes Layer                              │
 │              (auth.routes.js)                               │
 │  POST /api/auth/register, /login, /refresh, /logout        │
 └─────────────────────────────────────────────────────────────┘
@@ -130,15 +144,33 @@ Each package in `package.json` serves a specific purpose:
 ┌─────────────────────────────────────────────────────────────┐
 │                 Controller Layer                             │
 │          (auth.controller.js)                               │
-│  Handles business logic: validation, hashing, token gen    │
+│  Handles requests - validates input, manages responses      │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│                  Service Layer                               │
+│     (auth.services.js, token.service.js)                    │
+│  Business logic - registration, authentication, token gen   │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│              Repository Layer                                │
+│     (user.repository.js, token.repository.js)               │
+│       Database operations - CRUD on users & tokens          │
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                   Data Model Layer                           │
 │          (user.model.js, tokens.model.js)                   │
-│       Communicates with MongoDB database                     │
+│       Schemas - defines data structure for MongoDB          │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+**Benefits of this architecture:**
+- **Separation of Concerns**: Each layer has a single responsibility
+- **Testability**: Easy to test each layer independently
+- **Maintainability**: Changes to business logic don't affect routes
+- **Reusability**: Services can be used by multiple controllers
 
 ---
 
@@ -378,93 +410,242 @@ export default authRouter;
 
 ---
 
-### 8. **`src/controllers/auth.controller.js`** - Business Logic
+### 8. **`src/controllers/auth.controller.js`** - Request Handlers
 
-This is the most important file. Let's break it down function by function:
+Controllers handle HTTP requests and delegate business logic to services. They are thin and focused on request/response handling:
 
-#### **`registerController`** - User Registration
+#### **`registerController`** - User Registration Request Handler
 
 ```javascript
-const registerController = async (req, res) => {
+import { registerService } from "../services/auth.services.js";
+
+const registerController = async (req, res, next) => {
+    const { username, email, password } = req.body;
+
     try {
-        // Extract data from request body
-        const { username, email, password } = req.body;
+        // Delegate registration logic to service layer
+        const data = await registerService(username, email, password);
 
-        // Validation: Check if all fields are provided
-        if (!username || !email || !password) {
-            return res.status(400).json({ message: "All fields are required" });
-        }
-
-        // Check if user with this email already exists
-        const isUserExist = await User.findOne({ email });
-        if (isUserExist) {
-            return res.status(400).json({ message: "User already exists" });
-        }
-
-        // Hash password using bcrypt (salting rounds: 10)
-        // NEVER store plain passwords! Hashing makes it impossible to reverse
-        const hashPassword = await bcrypt.hash(password, 10);
-
-        // Create new user in database
-        const newUser = await User.create({
-            username, email, password: hashPassword
-        })
-        if (!newUser) {
-            return res.status(500).json({ message: "User registration failed" });
-        }
-
-        // Generate access token (short-lived, 15 minutes)
-        const accessToken = jwt.sign(
-            { id: newUser._id },                    // Payload: user ID
-            JWT_SECRET_ACCESS_TOKEN,                 // Secret for signing
-            { expiresIn: JWT_ACCESS_TOKEN_EXPIRES_IN } // Expiration time
-        )
-        
-        // Store access token in HTTP-only cookie (secure, not accessible via JS)
-        res.cookie("accessToken", accessToken, {
-            httpOnly: true,              // Prevents JavaScript from accessing it
-            secure: NODE_ENV === 'production',  // HTTPS only in production
-            sameSite: 'strict'           // Prevents CSRF attacks
-        });
-
-        // Generate refresh token (long-lived, 7 days)
-        const refreshToken = jwt.sign(
-            { id: newUser._id },
-            JWT_SECRET_REFRESH_TOKEN,
-            { expiresIn: JWT_REFRESH_TOKEN_EXPIRES_IN }
-        )
-        
-        // Store refresh token in database (allows server to invalidate it)
-        const storeRefreshTokenIndb = await Token.create({
-            userId: newUser._id,
-            token: refreshToken
-        });
-
-        if (!storeRefreshTokenIndb) {
-            return res.status(500).json({ message: "Failed to store refresh token" });
-        }
-
-        // Store refresh token in HTTP-only cookie as well
-        res.cookie("refreshToken", refreshToken, {
+        // Set access token in HTTP-only cookie
+        res.cookie("accessToken", data.accessToken, {
             httpOnly: true,
             secure: NODE_ENV === 'production',
-            sameSite: 'strict'
+            sameSite: 'strict',
+            path: '/'
         });
 
-        // Send success response with user data (excluding password)
+        // Set refresh token in HTTP-only cookie
+        res.cookie("refreshToken", data.refreshToken, {
+            httpOnly: true,
+            secure: NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/'
+        });
+
+        // Send success response
         res.status(201).json({
             message: "User registered successfully",
             user: {
-                _id: newUser._id,
-                username: newUser.username,
-                email: newUser.email
+                _id: data.newUser._id,
+                username: data.newUser.username,
+                email: data.newUser.email
             }
         });
     } catch (error) {
-        console.error("Registration error:", error);
-        res.status(500).json({ message: "Internal server error" });
+        // Pass error to error handling middleware
+        next(error);
     }
 }
+```
+
+**Flow:**
+1. Extracts username, email, password from request body
+2. Calls `registerService()` which handles all business logic
+3. Sets tokens in HTTP-only cookies (secure, JS cannot access)
+4. Returns user data in response
+5. If error occurs, passes to error middleware
+
+**Why separate controller from service?**
+- Controller: Focuses on HTTP (requests, responses, status codes)
+- Service: Focuses on business logic (validation, encryption, token generation)
+- This separation makes testing easier and code more maintainable
+
+---
+
+### 9. **`src/services/auth.services.js`** - Authentication Business Logic
+
+Services contain the core business logic. The `registerService` function handles user registration:
+
+```javascript
+import bcrypt from "bcryptjs";
+import { createUser, getUserByEmail } from "../repositories/user.repository.js";
+import { createToken } from "../repositories/token.repository.js";
+import { createError } from "../utils/error.util.js";
+import { generateTokens } from "./token.service.js";
+
+const registerService = async (username, email, password) => {
+    // Validation: Check if all fields are provided
+    if (!username || !email || !password) {
+        throw createError("All fields are required", 400);
+    }
+
+    // Check if user with this email already exists
+    const isUserExist = await getUserByEmail(email);
+    if (isUserExist) {
+        throw createError("User already exists", 400);
+    }
+
+    // Hash password using bcrypt (salting rounds: 10)
+    // NEVER store plain passwords! Hashing is one-way encryption
+    const hashPassword = await bcrypt.hash(password, 10);
+
+    // Create new user in database via repository
+    const newUser = await createUser(username, email, hashPassword);
+
+    // Generate both access and refresh tokens via token service
+    const { accessToken, refreshToken } = generateTokens(newUser._id);
+
+    // Store refresh token in database via repository
+    await createToken(newUser._id, refreshToken);
+
+    // Return generated user and tokens to controller
+    return { newUser, accessToken, refreshToken };
+}
+
+export { registerService };
+```
+
+**Flow breakdown:**
+1. **Validation**: Ensures all required fields are present
+2. **Check Uniqueness**: Verifies email doesn't already exist
+3. **Password Hashing**: Encrypts password using bcrypt
+4. **User Creation**: Calls repository to save user to database
+5. **Token Generation**: Calls token service to create access + refresh tokens
+6. **Token Storage**: Stores refresh token in database for future validation
+7. **Return Data**: Passes user and tokens back to controller
+
+**Benefits of service layer:**
+- Business logic is isolated and testable
+- Can be reused by different controllers
+- Easy to maintain - changes to logic happen in one place
+- Error handling is centralized
+
+---
+
+### 10. **`src/services/token.service.js`** - Token Generation
+
+```javascript
+import jwt from "jsonwebtoken";
+import { JWT_SECRET_ACCESS_TOKEN, JWT_SECRET_REFRESH_TOKEN, JWT_ACCESS_TOKEN_EXPIRES_IN, JWT_REFRESH_TOKEN_EXPIRES_IN } from "../config/env/env.js";
+
+const generateTokens = (userId) => {
+    // Create access token (short-lived, 15 minutes)
+    const accessToken = jwt.sign(
+        { id: userId },                     // Payload: user ID
+        JWT_SECRET_ACCESS_TOKEN,             // Secret for signing
+        { expiresIn: JWT_ACCESS_TOKEN_EXPIRES_IN }
+    );
+
+    // Create refresh token (long-lived, 7 days)
+    const refreshToken = jwt.sign(
+        { id: userId },
+        JWT_SECRET_REFRESH_TOKEN,
+        { expiresIn: JWT_REFRESH_TOKEN_EXPIRES_IN }
+    );
+
+    return { accessToken, refreshToken };
+}
+
+export { generateTokens };
+```
+
+**Token Types:**
+- **Access Token**: Short-lived (15 min), used for API requests. If compromised, limited damage.
+- **Refresh Token**: Long-lived (7 days), used only to get new access tokens. Stored in database for revocation.
+
+---
+
+### 11. **`src/repositories/user.repository.js`** - User Data Operations
+
+Repositories handle all database operations for a specific model:
+
+```javascript
+import User from "../models/user.model.js";
+
+// Get user by email
+const getUserByEmail = async (email) => {
+    return await User.findOne({ email });
+}
+
+// Create new user
+const createUser = async (username, email, hashPassword) => {
+    return await User.create({
+        username,
+        email,
+        password: hashPassword
+    });
+}
+
+export { getUserByEmail, createUser };
+```
+
+**Purpose:**
+- Centralizes database queries
+- Makes it easy to swap databases (MySQL, PostgreSQL) without changing service logic
+- Single point of change for data access patterns
+
+---
+
+### 12. **`src/repositories/token.repository.js`** - Token Data Operations
+
+```javascript
+import Token from "../models/tokens.model.js";
+
+// Store refresh token in database
+const createToken = async (userId, token) => {
+    return await Token.create({
+        userId,
+        token
+    });
+}
+
+// Get token by user ID
+const getTokenByUserId = async (userId) => {
+    return await Token.findOne({ userId });
+}
+
+// Delete token (for logout)
+const deleteToken = async (userId) => {
+    return await Token.deleteOne({ userId });
+}
+
+export { createToken, getTokenByUserId, deleteToken };
+```
+
+**Why store refresh tokens?**
+- Allows server to invalidate tokens (logout, security breach)
+- Tracks which devices have valid sessions
+- Can implement token rotation for extra security
+
+---
+
+### 13. **`src/utils/error.util.js`** - Error Handling
+
+```javascript
+export const createError = (message, statusCode) => {
+    const error = new Error(message);
+    error.statusCode = statusCode;
+    return error;
+}
+```
+
+**Centralized error creation:**
+- Consistent error format throughout the app
+- Easy to add error logging, monitoring in future
+
+---
+
+### 14. **`src/middlewares/auth.middleware.js`** - JWT Verification
 ```
 
 **Step-by-step flow:**
