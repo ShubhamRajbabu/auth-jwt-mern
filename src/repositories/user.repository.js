@@ -10,4 +10,4 @@ const createUser = async (username, email, password) => {
     })
 }
 
-export { getUserByEmail, createUser };
+export const userRepository = { getUserByEmail, createUser };
