@@ -251,400 +251,169 @@ curl -X GET http://localhost:5000/api/user/profile \
 | **dotenv** | ^17.3.1 | Load environment variables from `.env` file |
 | **nodemon** | ^3.1.11 | Auto-restart server on file changes (dev only) |
 
-### Why `"type": "module"` in package.json?
-Enables ES6 `import/export` syntax instead of CommonJS `require/module.exports`. Modern and cleaner.
+
+# Auth JWT MERN
+
+Lightweight backend implementing JWT-based authentication (access + refresh tokens) using Node.js, Express and MongoDB.
+
+This repository provides a layered backend that supports user registration, login, token refresh, protected routes and logout with refresh-token persistence.
 
 ---
 
-## 🏗️ Architecture & Flow
+**Quick links**
 
-### Five-Tier Layered Architecture
+- **Entry:** `server.js`
+- **App:** `src/app.js`
+- **Routes:** `src/routes/*`
+- **Controllers:** `src/controllers/*`
+- **Services:** `src/services/*`
+- **Models:** `src/models/*`
 
-```
-┌────────────────────────────────────────────────────────────────────┐
-│                    1️⃣  ROUTES LAYER                                │
-│                  (auth.routes.js, user.routes.js)                  │
-│  Defines API endpoints & HTTP methods                              │
-│  POST /api/auth/register, /login, /refresh, /logout               │
-│  GET  /api/user/profile                                            │
-└────────────────────────────────────────────────────────────────────┘
-                              ↓
-┌────────────────────────────────────────────────────────────────────┐
-│              2️⃣  MIDDLEWARE LAYER                                   │
-│        (auth.middleware.js, error.middleware.js)                   │
-│  Request processing: JWT validation, error handling                │
-└────────────────────────────────────────────────────────────────────┘
-                              ↓
-┌────────────────────────────────────────────────────────────────────┐
-│              3️⃣  CONTROLLER LAYER                                   │
-│          (auth.controller.js, user.controller.js)                  │
-│  Receives requests, validates input, delegates to services         │
-│  Manages response formatting and error handling                    │
-└────────────────────────────────────────────────────────────────────┘
-                              ↓
-┌────────────────────────────────────────────────────────────────────┐
-│              4️⃣  SERVICE LAYER                                      │
-│         (auth.services.js, token.service.js)                       │
-│  Business logic: registration, login, token generation/refresh     │
-│  Password hashing, credential validation, token management         │
-└────────────────────────────────────────────────────────────────────┘
-                              ↓
-┌────────────────────────────────────────────────────────────────────┐
-│              5️⃣  REPOSITORY LAYER                                   │
-│         (user.repository.js, token.repository.js)                  │
-│  Database operations: CRUD on Users & Tokens                       │
-└────────────────────────────────────────────────────────────────────┘
-                              ↓
-┌────────────────────────────────────────────────────────────────────┐
-│              6️⃣  DATA MODEL LAYER                                   │
-│           (user.model.js, tokens.model.js)                         │
-│  MongoDB Schemas: defines data structure & validation rules        │
-└────────────────────────────────────────────────────────────────────┘
-                              ↓
-┌────────────────────────────────────────────────────────────────────┐
-│              7️⃣  DATABASE LAYER                                     │
-│  MongoDB: persistent data storage                                  │
-└────────────────────────────────────────────────────────────────────┘
+---
+
+## Features
+
+- Register + Login with bcrypt password hashing
+- Access token (short-lived) + Refresh token (long-lived) flow
+- Refresh token persistence (refresh tokens stored in DB)
+- HTTP-only cookies for token transport
+- Protected user profile route
+- Layered structure: routes → controllers → services → repositories → models
+
+---
+
+## Getting started
+
+Requirements:
+
+- Node.js v14+
+- MongoDB (local or Atlas)
+
+Install dependencies:
+
+```bash
+cd /Users/shubhamshubham/Desktop/auth-jwt-mern
+npm install
 ```
 
-**Architecture Benefits:**
-- ✅ **Separation of Concerns** - Each layer has single responsibility
-- ✅ **Testability** - Layers can be tested independently
-- ✅ **Maintainability** - Easy to locate and modify specific functionality
-- ✅ **Reusability** - Services can be called by multiple controllers
-- ✅ **Scalability** - Easy to add new features without affecting other layers
-
----
-
-## 🔧 Component Details
-
-### 1. **Entry Point: `server.js`**
-
-```javascript
-import app from './src/app.js';
-import connectDb from './src/config/db/db.js';
-import { PORT } from './src/config/env/env.js';
-
-app.listen(PORT, async () => {
-    await connectDb()
-    console.log(`Server is running on http://localhost:${PORT}`);
-})
-```
-
-**Purpose:** Starts the Express server and connects to MongoDB.
-
----
-
-### 2. **App Configuration: `src/app.js`**
-
-```javascript
-import express from 'express';
-import cors from 'cors';
-import authRouter from './routes/auth.routes.js';
-import cookieParser from 'cookie-parser';
-import userRouter from './routes/user.routes.js';
-import errorMiddleware from './middlewares/error.middleware.js';
-
-const app = express();
-
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(cors());
-
-// Routes
-app.use('/api/auth', authRouter);
-app.use('/api/user', userRouter);
-
-// Error handling
-app.use(errorMiddleware);
-export default app;
-```
-
-**Purpose:** Configures Express middleware and registers routes.
-
----
-
-### 3. **Environment Config: `src/config/env/env.js`**
-
-Loads all environment variables from `.env` file using dotenv. Makes configuration centralized and secure.
-
----
-
-### 4. **Database Connection: `src/config/db/db.js`**
-
-Connects to MongoDB using Mongoose. Called at server startup in `server.js`.
-
----
-
-### 5. **Data Models**
-
-#### **User Model** (`src/models/user.model.js`)
-```javascript
-const userSchema = new mongoose.Schema({
-    username: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, trim: true },
-    password: { type: String, required: true, minlength: 6 }
-}, { timestamps: true });
-```
-
-#### **Token Model** (`src/models/tokens.model.js`)
-```javascript
-const tokenSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    token: { type: String, required: true, unique: true },
-    createdAt: { type: Date, default: Date.now, expires: '1d' }
-}, { timestamps: true });
-```
-
----
-
-### 6. **Repositories (Database Layer)**
-
-**`src/repositories/user.repository.js`**
-- `createUser()` - Create new user
-- `getUserByEmail()` - Find user by email
-
-**`src/repositories/token.repository.js`**
-- `createToken()` - Store refresh token
-- `getTokenByUserId()` - Retrieve token
-- `deleteTokenByUserId()` - Invalidate token (logout)
-
----
-
-### 7. **Services (Business Logic Layer)**
-
-#### **`src/services/auth.services.js`**
-- `registerService()` - Validation → Hash password → Create user → Generate tokens
-- `loginService()` - Find user → Validate password → Generate tokens
-- `logoutService()` - Delete refresh token
-- `refreshAccessTokenService()` - Validate refresh token → Issue new access token
-
-#### **`src/services/token.service.js`**
-- `generateTokens()` - Creates both access and refresh tokens using JWT
-
----
-
-### 8. **Controllers (Request/Response Layer)**
-
-#### **`src/controllers/auth.controller.js`**
-- `registerController()` - Calls registerService, sets cookies, returns response
-- `loginController()` - Calls loginService, sets cookies, returns response
-- `refreshAccessTokenController()` - Calls refresh service, updates access token cookie
-- `logoutController()` - Calls logout service, clears cookies
-
-#### **`src/controllers/user.controller.js`**
-- Returns authenticated user's profile information
-
----
-
-### 9. **Middleware**
-
-#### **`src/middlewares/auth.middleware.js`**
-Verifies JWT from cookies and protects routes:
-```javascript
-const authMiddleware = (req, res, next) => {
-    const { accessToken } = req.cookies;
-    if (!accessToken) {
-        return res.status(401).json({ message: "Invalid User" });
-    }
-    try {
-        const decoded = jwt.verify(accessToken, JWT_SECRET_ACCESS_TOKEN);
-        if (!decoded || !decoded.id) {
-            return res.status(401).json({ message: "Invalid token" });
-        }
-        req.user = decoded;
-        next();
-    } catch (error) {
-        return res.status(401).json({ message: "Token got expired" });
-    }
-}
-```
-
-#### **`src/middlewares/error.middleware.js`**
-Centralized error handling for all routes.
-
----
-
-### 10. **Routes**
-
-#### **`src/routes/auth.routes.js`**
-```javascript
-authRouter.post('/register', registerController);
-authRouter.post('/login', loginController);
-authRouter.post('/refresh', refreshAccessTokenController);
-authRouter.post('/logout', logoutController);
-```
-
-#### **`src/routes/user.routes.js`**
-```javascript
-userRouter.get('/profile', authMiddleware, userController);
-```
-
----
-
-## 🔐 Authentication Flow Diagram
-
-### Complete Authentication Cycle
+Environment variables (create a `.env` in the project root):
 
 ```
-1. REGISTRATION
-┌──────────────────────────────────────────────────────────────┐
-│ User → POST /api/auth/register                              │
-│ Body: { username, email, password }                         │
-└──────────────────────────────────────────────────────────────┘
-                         ↓
-                  Controller validates
-                  & calls Service
-                         ↓
-              Service hashes password
-              & validates uniqueness
-                         ↓
-              User created in MongoDB
-                         ↓
-            Tokens generated (JWT)
-                         ↓
-         Refresh token stored in DB
-                         ↓
-          Tokens set in HTTP-only cookies
-                         ↓
-           Response: User data + 201 Created
-
-2. LOGIN
-┌──────────────────────────────────────────────────────────────┐
-│ User → POST /api/auth/login                                 │
-│ Body: { email, password }                                   │
-└──────────────────────────────────────────────────────────────┘
-                         ↓
-              Find user, verify password
-                  (bcrypt.compare)
-                         ↓
-         Delete any existing refresh tokens
-                         ↓
-              Generate new tokens
-                         ↓
-         Store new refresh token in DB
-                         ↓
-          Set tokens in HTTP-only cookies
-                         ↓
-           Response: User data + 200 OK
-
-3. ACCESS PROTECTED ROUTE
-┌──────────────────────────────────────────────────────────────┐
-│ User → GET /api/user/profile                                │
-│ Cookies: { accessToken, refreshToken }                      │
-└──────────────────────────────────────────────────────────────┘
-                         ↓
-           Auth Middleware checks accessToken
-                         ↓
-         JWT verified using JWT_SECRET_ACCESS_TOKEN
-                         ↓
-    User ID extracted from token payload
-                         ↓
-        Route handler executes with req.user
-                         ↓
-           Response: User profile data
-
-4. TOKEN REFRESH (when access token expires)
-┌──────────────────────────────────────────────────────────────┐
-│ Frontend detects 401 response                               │
-│ → POST /api/auth/refresh                                    │
-│ Cookies: { refreshToken }                                   │
-└──────────────────────────────────────────────────────────────┘
-                         ↓
-      Verify refresh token signature
-                         ↓
-     Check if token exists in DB (not revoked)
-                         ↓
-          Generate new access token
-                         ↓
-        Set new accessToken in cookie
-                         ↓
-        Response: 200 OK (Frontend retries request)
-
-5. LOGOUT
-┌──────────────────────────────────────────────────────────────┐
-│ User → POST /api/auth/logout                                │
-│ Cookies: { refreshToken }                                   │
-└──────────────────────────────────────────────────────────────┘
-                         ↓
-          Delete refresh token from DB
-                         ↓
-        Clear both cookies (client-side)
-                         ↓
-           Response: Logout success message
+PORT=5000
+NODE_ENV=development
+MONGO_URI=mongodb://localhost:27017/auth-jwt-mern
+JWT_SECRET_ACCESS_TOKEN=your_access_secret
+JWT_SECRET_REFRESH_TOKEN=your_refresh_secret
+JWT_ACCESS_TOKEN_EXPIRES_IN=15m
+JWT_REFRESH_TOKEN_EXPIRES_IN=7d
 ```
+
+Start server:
+
+```bash
+npm run dev   # uses nodemon
+# or
+npm start
+```
+
+The server listens on `PORT` and connects to MongoDB at startup.
 
 ---
 
-## 🛡️ Security Features
+## Scripts
 
-| Feature | Implementation | Benefit |
-|---------|----------------|---------|
-| **Password Hashing** | bcryptjs with salt (10 rounds) | Passwords are one-way encrypted; unrecoverable even if DB is breached |
-| **HTTP-Only Cookies** | `httpOnly: true` on all token cookies | JavaScript cannot access tokens (prevents XSS attacks) |
-| **Secure Flag** | `secure: true` in production | Cookies only sent over HTTPS (prevents man-in-the-middle attacks) |
-| **SameSite Policy** | `sameSite: 'strict'` | Prevents CSRF attacks (cross-site request forgery) |
-| **Dual Tokens** | Access (15m) + Refresh (7d) | Short-lived access token limits damage from theft; long-lived refresh token improves UX |
-| **Token Revocation** | Refresh tokens stored in DB | Server can invalidate tokens on logout or security breach |
-| **Unique Emails** | `unique: true` in schema | Prevents multiple accounts with same email |
-| **Input Validation** | Checked in controllers & services | Prevents malformed data and injection attacks |
-| **Centralized Error Handling** | Error middleware | Prevents leaking sensitive info in error messages |
+- `npm run dev` — start server with `nodemon` (development)
+- `npm start` — start server with `node` (production)
+
+Scripts are defined in `package.json`.
 
 ---
 
-## 📊 Token Lifecycle
+## Environment (from `src/config/env/env.js`)
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        ACCESS TOKEN (15 minutes)                 │
-├─────────────────────────────────────────────────────────────────┤
-│ • Used for every API request                                     │
-│ • Short expiry improves security                                 │
-│ • When expired → Use refresh token to get new access token       │
-│ • Signature verified on every request (no DB lookup needed)      │
-│ • Cannot be manually revoked                                     │
-└─────────────────────────────────────────────────────────────────┘
+The code reads the following variables from process.env (via dotenv):
 
-            ↓ (when expired, use refresh token)
+- `PORT` — port server listens on
+- `NODE_ENV` — environment (default: `development`)
+- `MONGO_URI` — MongoDB connection string
+- `JWT_SECRET_ACCESS_TOKEN` — secret key for signing access tokens
+- `JWT_SECRET_REFRESH_TOKEN` — secret key for signing refresh tokens
+- `JWT_ACCESS_TOKEN_EXPIRES_IN` — access token TTL (e.g. `15m`)
+- `JWT_REFRESH_TOKEN_EXPIRES_IN` — refresh token TTL (e.g. `7d`)
 
-┌─────────────────────────────────────────────────────────────────┐
-│                     REFRESH TOKEN (7 days)                       │
-├─────────────────────────────────────────────────────────────────┤
-│ • Used only to get new access tokens                             │
-│ • Stored in database (can be revoked)                            │
-│ • Long expiry allows seamless user experience                    │
-│ • On logout → Token deleted from DB (cannot be reused)          │
-│ • Auto-expires after 1 day in DB (TTL index)                    │
-└─────────────────────────────────────────────────────────────────┘
-```
+Make sure to set strong, unique secrets for production.
 
 ---
 
-## 🧪 Testing the API
+## API Reference
 
-### Using cURL
+Base path: `/api`
 
-**1. Register a new user:**
+Authentication routes — `src/routes/auth.routes.js`
+
+- `POST /api/auth/register` — create new user
+  - Body: `{ username, email, password }`
+  - Sets HTTP-only cookies: `accessToken`, `refreshToken`
+
+- `POST /api/auth/login` — login existing user
+  - Body: `{ email, password }`
+  - Sets HTTP-only cookies: `accessToken`, `refreshToken`
+
+- `POST /api/auth/refresh` — refresh access token
+  - Uses `refreshToken` cookie to issue a new `accessToken` cookie
+
+- `POST /api/auth/logout` — logout user and invalidate refresh token
+  - Clears token cookies and removes refresh token from DB
+
+User routes — `src/routes/user.routes.js`
+
+- `GET /api/user/profile` — get current authenticated user's profile
+  - Requires valid `accessToken` cookie (checked by `auth.middleware`)
+
+Example curl (register):
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"username":"john","email":"john@test.com","password":"Pass123"}'
+  -d '{"username":"alice","email":"alice@example.com","password":"Password123"}'
 ```
 
-**2. Login:**
-```bash
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"john@test.com","password":"Pass123"}'
-```
+---
 
-**3. Access protected route:**
-```bash
-curl -X GET http://localhost:5000/api/user/profile \
-  -b "accessToken=<token_from_previous_response>"
-```
+## Project layout
+
+Top-level important files and folders:
+
+- `server.js` — application entry, starts the server and DB connection
+- `src/app.js` — express setup, middlewares and route registration
+- `src/config/db/db.js` — mongoose connection helper
+- `src/config/env/env.js` — dotenv loader and exported env variables
+- `src/routes/` — route definitions (`auth.routes.js`, `user.routes.js`)
+- `src/controllers/` — controller handlers
+- `src/services/` — business logic (auth, token management)
+- `src/repositories/` — db access (users, tokens)
+- `src/models/` — mongoose schemas
+- `src/middlewares/` — `auth.middleware.js` and `error.middleware.js`
+
+---
+
+## Notes & recommendations
+
+- Use secure, randomly generated values for JWT secrets in production.
+- Serve over HTTPS in production to protect cookies in transit.
+- Consider setting `SameSite` and secure cookie flags when setting cookies.
+
+If you want, I can also:
+
+- Add an example `.env.example` file
+- Add Postman collection or OpenAPI spec for the API
+- Add setup scripts for MongoDB Atlas
+
+---
+
+## License
+
+This project does not contain a license file. Add one if you plan to publish or share.
 
 **4. Refresh access token:**
 ```bash

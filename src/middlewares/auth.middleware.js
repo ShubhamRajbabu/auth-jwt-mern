@@ -4,19 +4,19 @@ import jwt from "jsonwebtoken";
 const authMiddleware = (req, res, next) => {
     const { accessToken } = req.cookies;
     if (!accessToken) {
-        return res.status(401).json({ message: "Invalid User" });
+        throw createError(401, "Access token is missing");
     }
     try {
         const decoded = jwt.verify(accessToken, JWT_SECRET_ACCESS_TOKEN);
 
         if (!decoded || !decoded.id) {
-            return res.status(401).json({ message: "Invalid token" });
+            throw createError(401, "Invalid access token");
         }
 
         req.user = decoded;
         next();
     } catch (error) {
-        return res.status(401).json({ message: "Token got expired" });
+        next(createError(401, "Token got expired"));
     }
 }
 
