@@ -59,28 +59,35 @@ const loginService = async (email, password) => {
 
 }
 
-const refreshAccessTokenService = async (refreshToken) => {
+const getTokens = async (refreshToken) => {
     if (!refreshToken) {
         throw createError("Invalid or expired token", 401);
     }
 
-    const isRefreshTokenValid = tokenService.tokenValidator(refreshToken);
-
-    if (!isRefreshTokenValid) {
+    const decoded = tokenService.tokenValidator(refreshToken);
+    console.log("Decoded refresh token: ", decoded);
+    if (!decoded) {
         throw createError("Invalid or expired refresh token", 401);
     }
 
-    const storedRefreshToken = await tokenRepository.getRefreshTokenFromDB(refreshToken);
-    if (!storedRefreshToken) {
+    const dbTokenByUserId = await tokenRepository.getTokenFromDB(refreshToken);
+    console.log("DB token: ", dbTokenByUserId);
+    if (!dbTokenByUserId) {
         throw createError("Invalid or expired refresh token", 401);
     }
 
-    const newAccessToken = tokenService.generateAccessTokenById(storedRefreshToken.userId);
+    await tokenRepository.deleteTokenByUserId(decoded.id);
+    console.log("Old refresh token deleted from DB");
 
-    return { accessToken: newAccessToken };
+    const tokens = tokenService.generateTokens(decoded.id);
+    console.log("New tokens generated");
+
+    await tokenRepository.createToken(decoded.id, tokens.refreshToken);
+
+    return tokens;
 }
 
 const logoutService = async (refreshToken) => {
     await tokenRepository.deleteToken(refreshToken);
 }
-export const authService = { registerService, loginService, refreshAccessTokenService, logoutService };
+export const authService = { registerService, loginService, getTokens, logoutService };

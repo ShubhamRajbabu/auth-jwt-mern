@@ -1,22 +1,24 @@
 import { JWT_SECRET_ACCESS_TOKEN } from "../config/env/env.js";
 import jwt from "jsonwebtoken";
+import { createError } from "../utils/error.util.js";
 
 const authMiddleware = (req, res, next) => {
     const { accessToken } = req.cookies;
     if (!accessToken) {
-        throw createError(401, "Access token is missing");
+        next(createError("Please login again", 401));
+        return;
     }
     try {
         const decoded = jwt.verify(accessToken, JWT_SECRET_ACCESS_TOKEN);
 
         if (!decoded || !decoded.id) {
-            throw createError(401, "Invalid access token");
+            next(createError("Invalid access token", 401));
         }
 
         req.user = decoded;
         next();
     } catch (error) {
-        next(createError(401, "Token got expired"));
+        next(createError("Token got expired", 401));
     }
 }
 

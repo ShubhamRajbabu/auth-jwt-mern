@@ -67,12 +67,21 @@ const loginController = async (req, res, next) => {
     }
 }
 
-const refreshAccessTokenController = async (req, res, next) => {
+const refreshTokenController = async (req, res, next) => {
     const { refreshToken } = req.cookies;
     try {
-        const { accessToken } = await authService.refreshAccessTokenService(refreshToken);
+        const tokens = await authService.getTokens(refreshToken);
 
-        res.cookie("accessToken", accessToken, {
+        console.log("Setting new tokens in cookies: ", tokens);
+
+        res.cookie("accessToken", tokens.accessToken, {
+            httpOnly: true,
+            secure: NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/'
+        });
+
+        res.cookie("refreshToken", tokens.refreshToken, {
             httpOnly: true,
             secure: NODE_ENV === 'production',
             sameSite: 'strict',
@@ -111,4 +120,4 @@ const logoutController = async (req, res, next) => {
 
 }
 
-export { registerController, loginController, refreshAccessTokenController, logoutController };
+export { registerController, loginController, refreshTokenController, logoutController };
