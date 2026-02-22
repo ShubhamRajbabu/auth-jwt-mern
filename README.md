@@ -7,7 +7,7 @@ A secure JWT-based authentication backend built with Node.js, Express, and Mongo
 2. [Project Structure](#project-structure)
 3. [Installation & Setup](#installation--setup)
 4. [API Endpoints](#api-endpoints)
-5. [Dependencies Explained](#dependencies-explained)
+5. [Dependencies](#dependencies)
 6. [Architecture & Flow](#architecture--flow)
 7. [Component Details](#component-details)
 8. [Authentication Flow](#authentication-flow)
@@ -18,7 +18,7 @@ A secure JWT-based authentication backend built with Node.js, Express, and Mongo
 
 ## 🎯 Project Overview
 
-This is a **production-ready MERN Stack Authentication System** using **JWT (JSON Web Tokens)**. It implements a complete, secure authentication mechanism with:
+This is a **production-ready MERN Stack Authentication & Task Management System** using **JWT (JSON Web Tokens)**. It implements a complete, secure authentication mechanism with task management capabilities:
 
 - ✅ **User Registration** - Secure signup with bcrypt password hashing
 - ✅ **User Login** - Credential validation and dual-token issuance
@@ -27,6 +27,7 @@ This is a **production-ready MERN Stack Authentication System** using **JWT (JSO
 - ✅ **User Logout** - Token invalidation and cleanup
 - ✅ **Protected Routes** - JWT-based route protection with middleware
 - ✅ **HTTP-Only Cookies** - Secure token storage (XSS/CSRF protection)
+- ✅ **Task Management** - Create, read, update, delete tasks for authenticated users
 - ✅ **Layered Architecture** - Clean separation of concerns (Routes → Controllers → Services → Repositories → Models)
 
 **Why JWT?** JWT provides stateless authentication. The server doesn't store sessions—it cryptographically signs tokens that clients include with requests. This enables:
@@ -44,34 +45,39 @@ auth-jwt-mern/
 ├── package.json                    # Project dependencies & scripts
 ├── server.js                       # Application entry point
 ├── README.md                       # Project documentation
-├── src/
-│   ├── app.js                      # Express app setup & middleware configuration
-│   ├── config/
-│   │   ├── db/
-│   │   │   └── db.js               # MongoDB connection setup
-│   │   └── env/
-│   │       └── env.js              # Environment variables loader (dotenv)
-│   ├── controllers/
-│   │   ├── auth.controller.js      # Request handlers for auth operations
-│   │   └── user.controller.js      # Request handlers for user profile
-│   ├── services/
-│   │   ├── auth.services.js        # Auth business logic (register, login, logout)
-│   │   └── token.service.js        # Token generation & refresh logic
-│   ├── repositories/
-│   │   ├── user.repository.js      # User CRUD operations
-│   │   └── token.repository.js     # Refresh token CRUD operations
-│   ├── models/
-│   │   ├── user.model.js           # User schema (username, email, password)
-│   │   └── tokens.model.js         # Token schema (userId, refreshToken)
-│   ├── middlewares/
-│   │   ├── auth.middleware.js      # JWT verification & validation
-│   │   └── error.middleware.js     # Global error handling
-│   ├── routes/
-│   │   ├── auth.routes.js          # Auth endpoints (/register, /login, etc.)
-│   │   └── user.routes.js          # User endpoints (/profile)
-│   └── utils/
-│       └── error.util.js           # Custom error creation utility
-└── .env                            # Environment variables (create locally)
+└── src/
+    ├── app.js                      # Express app setup & middleware configuration
+    ├── config/
+    │   ├── db/
+    │   │   └── db.js               # MongoDB connection setup
+    │   └── env/
+    │       └── env.js              # Environment variables loader (dotenv)
+    ├── controllers/
+    │   ├── auth.controller.js      # Request handlers for auth operations
+    │   ├── user.controller.js      # Request handlers for user profile
+    │   └── task.controller.js      # Request handlers for task operations
+    ├── services/
+    │   ├── auth.services.js        # Auth business logic (register, login, logout)
+    │   ├── token.service.js        # Token generation & refresh logic
+    │   ├── user.service.js         # User business logic
+    │   └── task.services.js        # Task business logic
+    ├── repositories/
+    │   ├── user.repository.js      # User CRUD operations
+    │   ├── token.repository.js     # Refresh token CRUD operations
+    │   └── task.repository.js      # Task CRUD operations
+    ├── models/
+    │   ├── user.model.js           # User schema (username, email, password)
+    │   ├── tokens.model.js         # Token schema (userId, refreshToken)
+    │   └── task.model.js           # Task schema (title, description, userId, status)
+    ├── middlewares/
+    │   ├── auth.middleware.js      # JWT verification & validation
+    │   └── error.middleware.js     # Global error handling
+    ├── routes/
+    │   ├── auth.routes.js          # Auth endpoints (/register, /login, /refresh, /logout)
+    │   ├── user.routes.js          # User endpoints (/profile)
+    │   └── task.routes.js          # Task endpoints (/getAllTasks)
+    └── utils/
+        └── error.util.js           # Custom error creation utility
 ```
 
 ---

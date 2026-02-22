@@ -120,4 +120,4 @@ const logoutController = async (req, res, next) => {
 
 }
 
-export { registerController, loginController, refreshTokenController, logoutController };
+export const authController = { registerController, loginController, refreshTokenController, logoutController };

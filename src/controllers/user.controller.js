@@ -1,7 +1,7 @@
 
 import { userService } from "../services/user.service.js";
 
-const userController = async (req, res, next) => {
+const getUserProfile = async (req, res, next) => {
     const user = req.user; //from authMiddleware, we are getting the user details 
     try {
         const userProfile = await userService.getUserDetailsById(user.id);
@@ -12,4 +12,4 @@ const userController = async (req, res, next) => {
 
 }
 
-export default userController;
+export const userController = { getUserProfile };
