@@ -6,7 +6,7 @@ const registerController = async (req, res, next) => {
     const { username, email, password } = req.body;
 
     try {
-        const data = await authService.registerService(username, email, password);
+        const data = await authService.registerUser(username, email, password);
 
         res.cookie("accessToken", data.accessToken, {
             httpOnly: true,
@@ -38,7 +38,7 @@ const registerController = async (req, res, next) => {
 const loginController = async (req, res, next) => {
     try {
         const { email, password } = req.body;
-        const { userData, accessToken, refreshToken, } = await authService.loginService(email, password)
+        const { userData, accessToken, refreshToken, } = await authService.loginUser(email, password)
 
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
@@ -99,7 +99,7 @@ const logoutController = async (req, res, next) => {
 
     try {
         const { refreshToken } = req.cookies;
-        await authService.logoutService(refreshToken);
+        await authService.logoutUser(refreshToken);
 
         res.clearCookie("accessToken", {
             httpOnly: true,

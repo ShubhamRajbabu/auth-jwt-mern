@@ -5,7 +5,7 @@ import { tokenRepository } from "../repositories/token.repository.js";
 import { createError } from "../utils/error.util.js";
 import { tokenService } from "./token.service.js";
 
-const registerService = async (username, email, password) => {
+const registerUser = async (username, email, password) => {
 
     if (!username || !email || !password) {
         throw createError("All fields are required", 400);
@@ -20,14 +20,14 @@ const registerService = async (username, email, password) => {
 
     const newUser = await userRepository.createUser(username, email, hashPassword);
 
-    const { accessToken, refreshToken } = tokenService.generateTokens(newUser._id);
+    const { accessToken, refreshToken } = tokenService.generateTokens(newUser);
 
     await tokenRepository.createToken(newUser._id, refreshToken);
 
     return { newUser, accessToken, refreshToken };
 }
 
-const loginService = async (email, password) => {
+const loginUser = async (email, password) => {
     if (!email || !password) {
         throw createError("All fields are required", 400);
     }
@@ -87,7 +87,7 @@ const getTokens = async (refreshToken) => {
     return tokens;
 }
 
-const logoutService = async (refreshToken) => {
+const logoutUser = async (refreshToken) => {
     await tokenRepository.deleteToken(refreshToken);
 }
-export const authService = { registerService, loginService, getTokens, logoutService };
+export const authService = { registerUser, loginUser, getTokens, logoutUser };

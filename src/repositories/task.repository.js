@@ -24,7 +24,7 @@ const deleteAllTasksForUser = async (userId) => {
     return await Task.deleteMany({ userId });
 }
 
-const getAllTasks = async () => {
+const getAllAdminTasks = async () => {
     return await Task.find({});
 };
 
@@ -46,7 +46,7 @@ const deleteAllTasks = async () => {
 
 export const taskRepository =
 {
-    getAllTasks, getAllTasksByUserId, getTaskById,
+    getAllAdminTasks, getAllTasksByUserId, getTaskById,
     createTask, updateTask, deleteTaskById,
     deleteAllTasks, getTaskByTaskId, updateTaskByTaskId,
     deleteTaskByTaskId, deleteAllTasksForUser

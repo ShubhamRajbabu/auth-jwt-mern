@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { get } from "mongoose";
 import { taskRepository } from "../repositories/task.repository.js";
 import { createError } from "../utils/error.util.js";
 
@@ -27,11 +27,11 @@ const getTaskById = async (taskId, userId) => {
     return tasks;
 }
 
-const createTask = async (taskData) => {
-    if (!taskData) {
+const createTask = async (title, description, userId) => {
+    if (!title || !description) {
         throw createError("Please provide all details for creating tasks", 400);
     }
-    const newTask = await taskRepository.createTask(taskData);
+    const newTask = await taskRepository.createTask({ title, description, userId });
     if (!newTask) {
         throw createError("Failed to create task", 500);
     }
@@ -79,23 +79,47 @@ const deleteAllTasksForUser = async (userId) => {
     return await taskRepository.deleteAllTasksForUser(userId);
 }
 
-const getAllTasks = async () => {
-    return await taskRepository.getAllTasks();
+//admin tasks api's
+
+const getAllAdminTasks = async () => {
+    return await taskRepository.getAllAdminTasks();
 }
 
-const getTaskByTaskId = async (taskId) => {
+const getAdminTaskByTaskId = async (taskId) => {
+    if (!taskId) {
+        throw createError("Task ID is required", 400);
+    }
+    if (mongoose.Types.ObjectId.isValid(taskId) === false) {
+        throw createError("Invalid Task ID", 400);
+    }
     return await taskRepository.getTaskByTaskId(taskId);
 }
 
-const updateTaskByTaskId = async (taskId, updateData) => {
-    return await taskRepository.updateTaskByTaskId(taskId, updateData);
+const updateAdminTaskByTaskId = async (taskId, updateData) => {
+    if (!taskId) {
+        throw createError("Task ID is required", 400);
+    }
+    if (mongoose.Types.ObjectId.isValid(taskId) === false) {
+        throw createError("Invalid Task ID", 400);
+    }
+    const updatedTask = await taskRepository.updateTaskByTaskId(taskId, updateData);
+    if (!updatedTask) {
+        throw createError("Failed to update task", 500);
+    }
+    return updatedTask;
 }
 
-const deleteTaskByTaskId = async (taskId) => {
+const deleteAdminTaskByTaskId = async (taskId) => {
+    if (!taskId) {
+        throw createError("Task ID is required", 400);
+    }
+    if (mongoose.Types.ObjectId.isValid(taskId) === false) {
+        throw createError("Invalid Task ID", 400);
+    }
     return await taskRepository.deleteTaskByTaskId(taskId);
 }
 
-const deleteAllTasks = async () => {
+const deleteAllAdminTasks = async () => {
     return await taskRepository.deleteAllTasks();
 }
 
@@ -106,9 +130,9 @@ export const taskServices = {
     updateTask,
     deleteTaskById,
     deleteAllTasksForUser,
-    getAllTasks,
-    getTaskByTaskId,
-    updateTaskByTaskId,
-    deleteTaskByTaskId,
-    deleteAllTasks
+    getAllAdminTasks,
+    getAdminTaskByTaskId,
+    updateAdminTaskByTaskId,
+    deleteAdminTaskByTaskId,
+    deleteAllAdminTasks
 }

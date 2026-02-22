@@ -1,40 +1,65 @@
 # Auth JWT MERN - Complete Documentation
 
-A secure JWT-based authentication backend built with Node.js, Express, and MongoDB. Implements dual-token authentication (Access & Refresh tokens), bcrypt password hashing, and HTTP-only cookie storage with a clean layered architecture.
+A secure JWT-based authentication and task management backend built with Node.js, Express, and MongoDB. Implements dual-token authentication (Access & Refresh tokens), bcrypt password hashing, HTTP-only cookie storage, role-based access control, and a clean layered architecture.
 
 ## 📋 Table of Contents
 1. [Project Overview](#project-overview)
-2. [Project Structure](#project-structure)
-3. [Installation & Setup](#installation--setup)
-4. [API Endpoints](#api-endpoints)
-5. [Dependencies](#dependencies)
-6. [Architecture & Flow](#architecture--flow)
-7. [Component Details](#component-details)
-8. [Authentication Flow](#authentication-flow)
-9. [Environment Variables](#environment-variables)
-10. [Error Handling](#error-handling)
+2. [Features](#features)
+3. [Tech Stack](#tech-stack)
+4. [Project Structure](#project-structure)
+5. [Installation & Setup](#installation--setup)
+6. [Environment Variables](#environment-variables)
+7. [API Endpoints](#api-endpoints)
+8. [Architecture](#architecture)
+9. [Dependencies](#dependencies)
 
 ---
 
 ## 🎯 Project Overview
 
-This is a **production-ready MERN Stack Authentication & Task Management System** using **JWT (JSON Web Tokens)**. It implements a complete, secure authentication mechanism with task management capabilities:
+This is a **production-ready MERN Stack Authentication & Task Management System** using **JWT (JSON Web Tokens)**. It provides a complete, secure authentication mechanism with comprehensive task management capabilities and role-based access control.
 
-- ✅ **User Registration** - Secure signup with bcrypt password hashing
-- ✅ **User Login** - Credential validation and dual-token issuance
+The application implements:
+- Secure user registration and login with bcrypt password hashing
+- Dual-token authentication (Access tokens: 15m, Refresh tokens: 7d)
+- HTTP-only cookie-based token storage (XSS/CSRF protection)
+- Protected routes with JWT middleware
+- Task CRUD operations with user isolation
+- Admin-only task management endpoints
+- Clean layered architecture (Routes → Controllers → Services → Repositories → Models)
+
+---
+
+## ✨ Features
+
+- ✅ **User Authentication** - Secure registration/login with bcrypt hashing
 - ✅ **JWT Token Management** - Access tokens (15m) & Refresh tokens (7d)
-- ✅ **Token Refresh** - Seamless access token renewal without re-login
-- ✅ **User Logout** - Token invalidation and cleanup
-- ✅ **Protected Routes** - JWT-based route protection with middleware
-- ✅ **HTTP-Only Cookies** - Secure token storage (XSS/CSRF protection)
-- ✅ **Task Management** - Create, read, update, delete tasks for authenticated users
-- ✅ **Layered Architecture** - Clean separation of concerns (Routes → Controllers → Services → Repositories → Models)
+- ✅ **HTTP-Only Cookies** - Secure token storage with XSS/CSRF protection
+- ✅ **Token Refresh** - Seamless token renewal without re-login
+- ✅ **User Logout** - Token invalidation and database cleanup
+- ✅ **Protected Routes** - JWT-based middleware protection
+- ✅ **Task Management** - Full CRUD operations with user isolation
+- ✅ **Admin Routes** - Separate admin endpoints for task oversight
+- ✅ **Role-Based Access** - Admin role middleware for authorization
+- ✅ **Error Handling** - Centralized error middleware with custom errors
+- ✅ **Layered Architecture** - Clean separation of concerns
 
-**Why JWT?** JWT provides stateless authentication. The server doesn't store sessions—it cryptographically signs tokens that clients include with requests. This enables:
-- Horizontal scalability (no session replication needed)
-- Stateless APIs (easier microservices deployment)
-- CORS-friendly authentication
-- Token-based access delegation
+---
+
+## 🛠 Tech Stack
+
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| Node.js | 14+ | JavaScript runtime |
+| Express | ^5.2.1 | Web framework |
+| MongoDB | Latest | NoSQL database |
+| Mongoose | ^9.2.1 | MongoDB ODM |
+| JWT | ^9.0.3 | Token authentication |
+| bcryptjs | ^3.0.3 | Password hashing |
+| Cookie-Parser | ^1.4.7 | Cookie middleware |
+| CORS | ^2.8.6 | Cross-origin requests |
+| Dotenv | ^17.3.1 | Environment management |
+| Nodemon | ^3.1.11 | Development auto-reload |
 
 ---
 
@@ -42,42 +67,43 @@ This is a **production-ready MERN Stack Authentication & Task Management System*
 
 ```
 auth-jwt-mern/
-├── package.json                    # Project dependencies & scripts
+├── package.json                    # Dependencies & npm scripts
 ├── server.js                       # Application entry point
-├── README.md                       # Project documentation
+├── README.md                       # This file
 └── src/
-    ├── app.js                      # Express app setup & middleware configuration
+    ├── app.js                      # Express setup & middleware
     ├── config/
     │   ├── db/
     │   │   └── db.js               # MongoDB connection setup
     │   └── env/
-    │       └── env.js              # Environment variables loader (dotenv)
+    │       └── env.js              # Environment variables loader
     ├── controllers/
-    │   ├── auth.controller.js      # Request handlers for auth operations
-    │   ├── user.controller.js      # Request handlers for user profile
-    │   └── task.controller.js      # Request handlers for task operations
+    │   ├── auth.controller.js      # Auth request handlers
+    │   ├── user.controller.js      # User profile handlers
+    │   └── task.controller.js      # Task request handlers (user & admin)
     ├── services/
-    │   ├── auth.services.js        # Auth business logic (register, login, logout)
-    │   ├── token.service.js        # Token generation & refresh logic
+    │   ├── auth.services.js        # Auth business logic
+    │   ├── token.service.js        # Token generation & refresh
     │   ├── user.service.js         # User business logic
     │   └── task.services.js        # Task business logic
     ├── repositories/
-    │   ├── user.repository.js      # User CRUD operations
-    │   ├── token.repository.js     # Refresh token CRUD operations
-    │   └── task.repository.js      # Task CRUD operations
+    │   ├── user.repository.js      # User data access
+    │   ├── token.repository.js     # Token data access
+    │   └── task.repository.js      # Task data access
     ├── models/
-    │   ├── user.model.js           # User schema (username, email, password)
-    │   ├── tokens.model.js         # Token schema (userId, refreshToken)
-    │   └── task.model.js           # Task schema (title, description, userId, status)
+    │   ├── user.model.js           # User schema
+    │   ├── tokens.model.js         # Refresh token schema
+    │   └── task.model.js           # Task schema
     ├── middlewares/
-    │   ├── auth.middleware.js      # JWT verification & validation
+    │   ├── auth.middleware.js      # JWT verification
+    │   ├── role.middleware.js      # Role-based authorization
     │   └── error.middleware.js     # Global error handling
     ├── routes/
-    │   ├── auth.routes.js          # Auth endpoints (/register, /login, /refresh, /logout)
-    │   ├── user.routes.js          # User endpoints (/profile)
-    │   └── task.routes.js          # Task endpoints (/getAllTasks)
+    │   ├── auth.routes.js          # Authentication endpoints
+    │   ├── user.routes.js          # User endpoints
+    │   └── task.routes.js          # Task endpoints
     └── utils/
-        └── error.util.js           # Custom error creation utility
+        └── error.util.js           # Custom error utilities
 ```
 
 ---
@@ -85,13 +111,13 @@ auth-jwt-mern/
 ## 🚀 Installation & Setup
 
 ### Prerequisites
-- **Node.js** v14+ (download from [nodejs.org](https://nodejs.org))
-- **MongoDB** (local installation or [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) cloud)
-- **npm** or **yarn** package manager
+- **Node.js** v14+ ([download](https://nodejs.org))
+- **MongoDB** (local or [MongoDB Atlas](https://www.mongodb.com/cloud/atlas))
+- **npm** package manager
 
 ### Step-by-Step Setup
 
-1. **Navigate to the project directory**
+1. **Navigate to project directory**
 ```bash
 cd /Users/shubhamshubham/Desktop/auth-jwt-mern
 ```
@@ -101,46 +127,59 @@ cd /Users/shubhamshubham/Desktop/auth-jwt-mern
 npm install
 ```
 
-3. **Create `.env` file** in the root directory with required variables:
+3. **Create `.env` file** in the root directory
 ```bash
-cat > .env << EOF
 PORT=5000
 NODE_ENV=development
 
-# MongoDB Connection
+# MongoDB
 MONGO_URI=mongodb://localhost:27017/auth-jwt-mern
-# For MongoDB Atlas: mongodb+srv://username:password@cluster.mongodb.net/auth-jwt-mern
 
 # JWT Secrets (use strong, random values in production)
 JWT_SECRET_ACCESS_TOKEN=your_super_secret_access_token_key
 JWT_SECRET_REFRESH_TOKEN=your_super_secret_refresh_token_key
 
-# Token Expiry Times
+# Token Expiry
 JWT_ACCESS_TOKEN_EXPIRES_IN=15m
 JWT_REFRESH_TOKEN_EXPIRES_IN=7d
-EOF
 ```
 
 4. **Start the server**
 ```bash
-npm run dev      # Development mode (auto-restart with nodemon)
-# or
-npm start        # Production mode
+npm run dev      # Development (auto-restart with nodemon)
+npm start        # Production
 ```
 
-5. **Verify the server is running**
+5. **Verify server is running**
 ```bash
-# Should see: Server is running on http://localhost:5000
 curl http://localhost:5000/api/auth/register
 ```
 
 ---
 
+## 🔐 Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | 5000 | Server port |
+| `NODE_ENV` | development | Environment mode |
+| `MONGO_URI` | - | MongoDB connection string |
+| `JWT_SECRET_ACCESS_TOKEN` | - | Access token secret key |
+| `JWT_SECRET_REFRESH_TOKEN` | - | Refresh token secret key |
+| `JWT_ACCESS_TOKEN_EXPIRES_IN` | 15m | Access token TTL |
+| `JWT_REFRESH_TOKEN_EXPIRES_IN` | 7d | Refresh token TTL |
+
+**Production Tips:** Use strong, unique secrets and store them securely (never commit `.env`).
+
+---
+
 ## 📡 API Endpoints
+
+All endpoints use base path `/api`
 
 ### Authentication Routes (`/api/auth`)
 
-#### 1. **POST /api/auth/register** - Create new user account
+#### 1. **POST /api/auth/register** - Register new user
 ```bash
 curl -X POST http://localhost:5000/api/auth/register \
   -H "Content-Type: application/json" \
@@ -150,7 +189,7 @@ curl -X POST http://localhost:5000/api/auth/register \
     "password": "securePassword123"
   }'
 ```
-**Response (201 Created):**
+**Response (201):** Sets `accessToken` and `refreshToken` cookies
 ```json
 {
   "message": "User registered successfully",
@@ -161,9 +200,6 @@ curl -X POST http://localhost:5000/api/auth/register \
   }
 }
 ```
-**Sets cookies:** `accessToken`, `refreshToken` (HTTP-only)
-
----
 
 #### 2. **POST /api/auth/login** - Authenticate user
 ```bash
@@ -174,7 +210,7 @@ curl -X POST http://localhost:5000/api/auth/login \
     "password": "securePassword123"
   }'
 ```
-**Response (200 OK):**
+**Response (200):** Sets `accessToken` and `refreshToken` cookies
 ```json
 {
   "message": "User login successfully",
@@ -185,50 +221,43 @@ curl -X POST http://localhost:5000/api/auth/login \
   }
 }
 ```
-**Sets cookies:** `accessToken`, `refreshToken` (HTTP-only)
 
----
-
-#### 3. **POST /api/auth/refresh** - Get new access token
+#### 3. **POST /api/auth/refresh** - Refresh access token
 ```bash
 curl -X POST http://localhost:5000/api/auth/refresh \
-  -H "Content-Type: application/json" \
-  -b "refreshToken=<token_from_cookie>"
+  -b "refreshToken=<your_refresh_token>"
 ```
-**Response (200 OK):**
+**Response (200):** Sets new `accessToken` cookie
 ```json
 {
   "message": "Access token refreshed",
   "newAccessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
-**Sets cookie:** `accessToken` (HTTP-only)
 
----
-
-#### 4. **POST /api/auth/logout** - Invalidate user session
+#### 4. **POST /api/auth/logout** - Logout user
 ```bash
 curl -X POST http://localhost:5000/api/auth/logout \
-  -b "refreshToken=<token_from_cookie>"
+  -b "refreshToken=<your_refresh_token>"
 ```
-**Response (200 OK):**
+**Response (200):** Clears all auth cookies
 ```json
 {
   "message": "User logout successfully"
 }
 ```
-**Clears cookies:** `accessToken`, `refreshToken`
 
 ---
 
 ### User Routes (`/api/user`)
 
-#### 1. **GET /api/user/profile** - Get authenticated user profile
+#### 1. **GET /api/user/profile** - Get user profile
+Requires: Valid `accessToken` cookie
 ```bash
 curl -X GET http://localhost:5000/api/user/profile \
-  -b "accessToken=<token_from_cookie>"
+  -b "accessToken=<your_access_token>"
 ```
-**Response (200 OK):**
+**Response (200):**
 ```json
 {
   "message": "User profile",
@@ -240,164 +269,192 @@ curl -X GET http://localhost:5000/api/user/profile \
   }
 }
 ```
-**Requires:** Valid `accessToken` cookie (via auth.middleware)
 
 ---
 
-## 📦 Dependencies Explained
+### Task Routes (`/api/task`)
+
+All task routes require valid `accessToken` cookie.
+
+#### User Task Endpoints
+
+1. **GET /api/task/getAllTasksByUserId** - Get all user tasks
+```bash
+curl -X GET http://localhost:5000/api/task/getAllTasksByUserId \
+  -b "accessToken=<your_access_token>"
+```
+**Response (200):**
+```json
+{
+  "tasks": [
+    {
+      "_id": "60c5ebcd12f3a4b5c8d1e2f3",
+      "title": "Complete project",
+      "description": "Finish JWT auth",
+      "userId": "507f1f77bcf86cd799439011",
+      "status": "pending",
+      "createdAt": "2026-02-19T10:30:00.000Z"
+    }
+  ]
+}
+```
+
+2. **GET /api/task/getTaskById/:taskId** - Get specific task
+```bash
+curl -X GET http://localhost:5000/api/task/getTaskById/60c5ebcd12f3a4b5c8d1e2f3 \
+  -b "accessToken=<your_access_token>"
+```
+**Response (200):**
+```json
+{
+  "task": { /* task object */ }
+}
+```
+
+3. **POST /api/task/createTask** - Create new task
+```bash
+curl -X POST http://localhost:5000/api/task/createTask \
+  -H "Content-Type: application/json" \
+  -b "accessToken=<your_access_token>" \
+  -d '{
+    "title": "New Task",
+    "description": "Task description"
+  }'
+```
+**Response (201):**
+```json
+{
+  "task": { /* created task object */ }
+}
+```
+
+4. **PUT /api/task/updateTask/:taskId** - Update task
+```bash
+curl -X PUT http://localhost:5000/api/task/updateTask/60c5ebcd12f3a4b5c8d1e2f3 \
+  -H "Content-Type: application/json" \
+  -b "accessToken=<your_access_token>" \
+  -d '{
+    "title": "Updated Title",
+    "status": "completed"
+  }'
+```
+**Response (200):**
+```json
+{
+  "task": { /* updated task object */ }
+}
+```
+
+5. **DELETE /api/task/deleteTaskById/:taskId** - Delete task
+```bash
+curl -X DELETE http://localhost:5000/api/task/deleteTaskById/60c5ebcd12f3a4b5c8d1e2f3 \
+  -b "accessToken=<your_access_token>"
+```
+**Response (204):** No content
+
+6. **DELETE /api/task/deleteAllTasksForUser** - Delete all user tasks
+```bash
+curl -X DELETE http://localhost:5000/api/task/deleteAllTasksForUser \
+  -b "accessToken=<your_access_token>"
+```
+**Response (204):** No content
+
+#### Admin Task Endpoints
+
+All admin routes require `accessToken` + `admin` role.
+
+1. **GET /api/task/admin/getAllAdminTasks** - Get all tasks
+2. **GET /api/task/admin/getAdminTaskByTaskId/:taskId** - Get specific task
+3. **PUT /api/task/admin/updateAdminTaskByTaskId/:taskId** - Update any task
+4. **DELETE /api/task/admin/deleteAdminTaskByTaskId/:taskId** - Delete any task
+5. **DELETE /api/task/admin/deleteAllAdminTasks** - Delete all tasks
+
+---
+
+## 🏗 Architecture
+
+### Layered Architecture
+
+```
+Routes (Express Router)
+    ↓
+Controllers (Request handlers)
+    ↓
+Services (Business logic)
+    ↓
+Repositories (Data access)
+    ↓
+Models (Mongoose schemas)
+    ↓
+MongoDB (Database)
+```
+
+### Authentication Flow
+
+1. **Registration/Login:** User credentials → hashed password stored in DB
+2. **Token Generation:** Both access & refresh tokens created, stored as HTTP-only cookies
+3. **Request:** Client sends request with cookies
+4. **Auth Middleware:** Validates access token JWT
+5. **Token Refresh:** Expired access token → use refresh token for new access token
+6. **Logout:** Refresh token deleted from DB, cookies cleared
+
+### Error Handling
+
+Global error middleware (`error.middleware.js`) catches all errors and returns standardized responses with appropriate HTTP status codes.
+
+---
+
+## 📦 Dependencies
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| **express** | ^5.2.1 | Web framework for building REST APIs & routing |
-| **mongoose** | ^9.2.1 | MongoDB object modeling (schemas, validation, queries) |
-| **jsonwebtoken** | ^9.0.3 | JWT token creation and verification |
-| **bcryptjs** | ^3.0.3 | Password hashing with salt (security) |
+| **express** | ^5.2.1 | REST API framework & routing |
+| **mongoose** | ^9.2.1 | MongoDB ODM with schema validation |
+| **jsonwebtoken** | ^9.0.3 | JWT creation & verification |
+| **bcryptjs** | ^3.0.3 | Password hashing with salt rounds |
 | **cookie-parser** | ^1.4.7 | Parse HTTP cookies from requests |
-| **cors** | ^2.8.6 | Enable Cross-Origin Resource Sharing (frontend ↔ backend) |
-| **dotenv** | ^17.3.1 | Load environment variables from `.env` file |
-| **nodemon** | ^3.1.11 | Auto-restart server on file changes (dev only) |
-
-
-# Auth JWT MERN
-
-Lightweight backend implementing JWT-based authentication (access + refresh tokens) using Node.js, Express and MongoDB.
-
-This repository provides a layered backend that supports user registration, login, token refresh, protected routes and logout with refresh-token persistence.
+| **cors** | ^2.8.6 | Cross-origin resource sharing |
+| **dotenv** | ^17.3.1 | Environment variable management |
+| **nodemon** | ^3.1.11 | Development auto-restart (dev only) |
 
 ---
 
-**Quick links**
-
-- **Entry:** `server.js`
-- **App:** `src/app.js`
-- **Routes:** `src/routes/*`
-- **Controllers:** `src/controllers/*`
-- **Services:** `src/services/*`
-- **Models:** `src/models/*`
-
----
-
-## Features
-
-- Register + Login with bcrypt password hashing
-- Access token (short-lived) + Refresh token (long-lived) flow
-- Refresh token persistence (refresh tokens stored in DB)
-- HTTP-only cookies for token transport
-- Protected user profile route
-- Layered structure: routes → controllers → services → repositories → models
-
----
-
-## Getting started
-
-Requirements:
-
-- Node.js v14+
-- MongoDB (local or Atlas)
-
-Install dependencies:
+## 📝 Scripts
 
 ```bash
-cd /Users/shubhamshubham/Desktop/auth-jwt-mern
-npm install
+npm run dev      # Start with nodemon (auto-restart on changes)
+npm start        # Start production server
 ```
 
-Environment variables (create a `.env` in the project root):
-
-```
-PORT=5000
-NODE_ENV=development
-MONGO_URI=mongodb://localhost:27017/auth-jwt-mern
-JWT_SECRET_ACCESS_TOKEN=your_access_secret
-JWT_SECRET_REFRESH_TOKEN=your_refresh_secret
-JWT_ACCESS_TOKEN_EXPIRES_IN=15m
-JWT_REFRESH_TOKEN_EXPIRES_IN=7d
-```
-
-Start server:
-
-```bash
-npm run dev   # uses nodemon
-# or
-npm start
-```
-
-The server listens on `PORT` and connects to MongoDB at startup.
+Both commands run `server.js` as the entry point.
 
 ---
 
-## Scripts
+## 🔒 Security Features
 
-- `npm run dev` — start server with `nodemon` (development)
-- `npm start` — start server with `node` (production)
-
-Scripts are defined in `package.json`.
-
----
-
-## Environment (from `src/config/env/env.js`)
-
-The code reads the following variables from process.env (via dotenv):
-
-- `PORT` — port server listens on
-- `NODE_ENV` — environment (default: `development`)
-- `MONGO_URI` — MongoDB connection string
-- `JWT_SECRET_ACCESS_TOKEN` — secret key for signing access tokens
-- `JWT_SECRET_REFRESH_TOKEN` — secret key for signing refresh tokens
-- `JWT_ACCESS_TOKEN_EXPIRES_IN` — access token TTL (e.g. `15m`)
-- `JWT_REFRESH_TOKEN_EXPIRES_IN` — refresh token TTL (e.g. `7d`)
-
-Make sure to set strong, unique secrets for production.
+- **Password Hashing:** bcryptjs with salt rounds
+- **JWT Tokens:** Cryptographically signed, stateless authentication
+- **HTTP-Only Cookies:** Prevents XSS attacks
+- **Token Expiry:** Short-lived access tokens + long-lived refresh tokens
+- **Role-Based Access:** Admin middleware for protected operations
+- **Error Middleware:** Sanitized error responses
+- **CORS:** Configurable cross-origin requests
 
 ---
 
-## API Reference
+## 🤝 Contributing
 
-Base path: `/api`
-
-Authentication routes — `src/routes/auth.routes.js`
-
-- `POST /api/auth/register` — create new user
-  - Body: `{ username, email, password }`
-  - Sets HTTP-only cookies: `accessToken`, `refreshToken`
-
-- `POST /api/auth/login` — login existing user
-  - Body: `{ email, password }`
-  - Sets HTTP-only cookies: `accessToken`, `refreshToken`
-
-- `POST /api/auth/refresh` — refresh access token
-  - Uses `refreshToken` cookie to issue a new `accessToken` cookie
-
-- `POST /api/auth/logout` — logout user and invalidate refresh token
-  - Clears token cookies and removes refresh token from DB
-
-User routes — `src/routes/user.routes.js`
-
-- `GET /api/user/profile` — get current authenticated user's profile
-  - Requires valid `accessToken` cookie (checked by `auth.middleware`)
-
-Example curl (register):
-
-```bash
-curl -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"username":"alice","email":"alice@example.com","password":"Password123"}'
-```
+1. Fork the repository
+2. Create a feature branch
+3. Commit changes
+4. Push to branch
+5. Create a Pull Request
 
 ---
 
-## Project layout
+## 📄 License
 
-Top-level important files and folders:
-
-- `server.js` — application entry, starts the server and DB connection
-- `src/app.js` — express setup, middlewares and route registration
-- `src/config/db/db.js` — mongoose connection helper
-- `src/config/env/env.js` — dotenv loader and exported env variables
-- `src/routes/` — route definitions (`auth.routes.js`, `user.routes.js`)
-- `src/controllers/` — controller handlers
-- `src/services/` — business logic (auth, token management)
-- `src/repositories/` — db access (users, tokens)
+This project is licensed under the ISC License.
 - `src/models/` — mongoose schemas
 - `src/middlewares/` — `auth.middleware.js` and `error.middleware.js`
 
