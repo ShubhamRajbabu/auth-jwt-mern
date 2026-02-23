@@ -47,7 +47,7 @@ const loginUser = async (email, password) => {
     //  if exists, before creating and storing new refresh token for the user in db
     await tokenRepository.deleteTokenByUserId(userData._id);
 
-    const { accessToken, refreshToken } = tokenService.generateTokens(userData._id);
+    const { accessToken, refreshToken } = tokenService.generateTokens(userData);
 
     await tokenRepository.createToken(userData._id, refreshToken);
 
@@ -70,7 +70,7 @@ const getTokens = async (refreshToken) => {
         throw createError("Invalid or expired refresh token", 401);
     }
 
-    const dbTokenByUserId = await tokenRepository.getTokenFromDB(refreshToken);
+    const dbTokenByUserId = await tokenRepository.getTokenFromDB(refreshToken, decoded.id);
     console.log("DB token: ", dbTokenByUserId);
     if (!dbTokenByUserId) {
         throw createError("Invalid or expired refresh token", 401);
@@ -79,8 +79,11 @@ const getTokens = async (refreshToken) => {
     await tokenRepository.deleteTokenByUserId(decoded.id);
     console.log("Old refresh token deleted from DB");
 
-    const tokens = tokenService.generateTokens(decoded.id);
-    console.log("New tokens generated");
+    const userDetails = await userRepository.getUserById(decoded.id);
+    console.log("User details for new token generation: ", userDetails);
+
+    const tokens = tokenService.generateTokens(userDetails);
+    console.log("New tokens: ", tokens);
 
     await tokenRepository.createToken(decoded.id, tokens.refreshToken);
 

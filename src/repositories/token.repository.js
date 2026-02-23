@@ -15,8 +15,8 @@ const deleteToken = async (token) => {
     return await Token.deleteOne({ token: token });
 }
 
-const getTokenFromDB = async (token) => {
-    return await Token.findOne({ token });
+const getTokenFromDB = async (token, userId) => {
+    return await Token.findOne({ token, userId });
 }
 
 

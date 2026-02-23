@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { createError } from "../utils/error.util.js";
 
 const authMiddleware = (req, res, next) => {
+    console.log("Authenticating user with auth middleware: ", req.cookies);
     const { accessToken } = req.cookies;
     if (!accessToken) {
         next(createError("Please login again", 401));
@@ -10,8 +11,8 @@ const authMiddleware = (req, res, next) => {
     }
     try {
         const decoded = jwt.verify(accessToken, JWT_SECRET_ACCESS_TOKEN);
-
-        if (!decoded || !decoded.id) {
+        console.log("Decoded access token: ", decoded);
+        if (!decoded) {
             next(createError("Invalid access token", 401));
         }
 

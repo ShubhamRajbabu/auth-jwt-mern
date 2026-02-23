@@ -4,9 +4,12 @@ import { createError } from "../utils/error.util.js";
 
 const generateTokens = (userData) => {
     console.log("Generating tokens for userId: ", userData._id);
+    console.log("User details: ", userData);
     const accessToken = jwt.sign({ id: userData._id, role: userData.role }, JWT_SECRET_ACCESS_TOKEN, { expiresIn: JWT_ACCESS_TOKEN_EXPIRES_IN })
 
     const refreshToken = jwt.sign({ id: userData._id, role: userData.role }, JWT_SECRET_REFRESH_TOKEN, { expiresIn: JWT_REFRESH_TOKEN_EXPIRES_IN })
+    console.log("Generated access token: ", accessToken);
+    console.log("Generated refresh token: ", refreshToken);
     return { accessToken, refreshToken };
 }
 
@@ -18,9 +21,4 @@ const tokenValidator = (token) => {
     }
 }
 
-const generateAccessTokenById = (userId) => {
-    const accessToken = jwt.sign({ id: userId }, JWT_SECRET_ACCESS_TOKEN, { expiresIn: JWT_ACCESS_TOKEN_EXPIRES_IN });
-    return accessToken;
-}
-
-export const tokenService = { generateTokens, tokenValidator, generateAccessTokenById };
+export const tokenService = { generateTokens, tokenValidator };
