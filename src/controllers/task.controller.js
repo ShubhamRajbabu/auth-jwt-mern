@@ -2,8 +2,16 @@ import { taskServices } from "../services/task.services.js";
 
 const getAllTasks = async (req, res, next) => {
     const userDetails = req.user;
+    const pageNumber = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const completed = req.query.completed || false;
+    const createdAt = req.query.createdAt === 'asc' ? 1 : -1; //asc, desc
+
+    const filters = {
+        pageNumber, limit, completed, createdAt
+    };
     try {
-        const tasks = await taskServices.getAllTasksByUserId(userDetails.id);
+        const tasks = await taskServices.getAllTasksByUserId(userDetails.id, filters);
         return res.status(200).json({ tasks });
     } catch (error) {
         next(error);
@@ -68,8 +76,16 @@ const deleteAllTasksForUser = async (req, res, next) => {
 //admin task controllers
 
 const getAllAdminTasks = async (req, res, next) => {
+    const pageNumber = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const completed = req.query.completed || false;
+    const createdAt = req.query.createdAt === 'asc' ? 1 : -1; //asc, desc
+
+    const filters = {
+        pageNumber, limit, completed, createdAt
+    };
     try {
-        const tasks = await taskServices.getAllAdminTasks();
+        const tasks = await taskServices.getAllAdminTasks(filters);
         return res.status(200).json({ tasks });
     } catch (error) {
         next(error);

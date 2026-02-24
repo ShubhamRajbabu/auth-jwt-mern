@@ -1,7 +1,11 @@
 import Task from "../models/task.model.js"
 
-const getAllTasksByUserId = async (userId) => {
-    return await Task.find({ userId });
+const getAllTasksByUserId = async (userId, filters) => {
+    const {
+        pageNumber, limit, completed, createdAt
+    } = filters;
+    const skip = (pageNumber - 1) * limit;
+    return await Task.find({ userId, completed: completed }).sort({ createdAt: createdAt }).skip(skip).limit(limit).exec();
 };
 
 const getTaskById = async (taskId, userId) => {
@@ -24,8 +28,12 @@ const deleteAllTasksForUser = async (userId) => {
     return await Task.deleteMany({ userId });
 }
 
-const getAllAdminTasks = async () => {
-    return await Task.find({});
+const getAllAdminTasks = async (filters) => {
+    const {
+        pageNumber, limit, completed, createdAt
+    } = filters;
+    const skip = (pageNumber - 1) * limit;
+    return await Task.find({ completed }).sort({ createdAt }).skip(skip).limit(limit).exec();
 };
 
 const getTaskByTaskId = async (taskId) => {

@@ -2,11 +2,11 @@ import mongoose, { get } from "mongoose";
 import { taskRepository } from "../repositories/task.repository.js";
 import { createError } from "../utils/error.util.js";
 
-const getAllTasksByUserId = async (userId) => {
+const getAllTasksByUserId = async (userId, filters) => {
     if (!userId) {
         throw createError("User not authorized", 401);
     }
-    return await taskRepository.getAllTasksByUserId(userId);
+    return await taskRepository.getAllTasksByUserId(userId, filters);
 }
 
 const getTaskById = async (taskId, userId) => {
@@ -81,8 +81,8 @@ const deleteAllTasksForUser = async (userId) => {
 
 //admin tasks api's
 
-const getAllAdminTasks = async () => {
-    return await taskRepository.getAllAdminTasks();
+const getAllAdminTasks = async (filters) => {
+    return await taskRepository.getAllAdminTasks(filters);
 }
 
 const getAdminTaskByTaskId = async (taskId) => {

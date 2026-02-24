@@ -8,7 +8,7 @@ authRouter.post('/register', authController.registerController);
 
 authRouter.post('/login', authController.loginController);
 
-authRouter.post('/refresh', authMiddleware, authController.refreshTokenController);
+authRouter.post('/refresh', authController.refreshTokenController);
 
 authRouter.post('/logout', authMiddleware, authController.logoutController)
 

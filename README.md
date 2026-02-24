@@ -43,6 +43,7 @@ The application implements:
 - ✅ **Role-Based Access** - Admin role middleware for authorization
 - ✅ **Error Handling** - Centralized error middleware with custom errors
 - ✅ **Layered Architecture** - Clean separation of concerns
+- ✅ **Pagination && Sorting** - Added pagination and sorting for Tasks api
 
 ---
 
