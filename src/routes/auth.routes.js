@@ -1,7 +1,7 @@
 import express from 'express';
 import { authController } from '../controllers/auth.controller.js';
 import authMiddleware from '../middlewares/auth.middleware.js';
-import { avatarUpload } from '../utils/image.util.js';
+import { avatarUpload } from '../middlewares/multer.middleware.js';
 
 const authRouter = express.Router();
 

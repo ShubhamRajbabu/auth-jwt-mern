@@ -4,12 +4,10 @@ import { authService } from "../services/auth.services.js";
 
 const registerController = async (req, res, next) => {
     const { username, email, password } = req.body;
-    const avatarUrl = req.file
-        ? `/public/images/avatar/${req.file.filename}`
-        : undefined;
+    const avatarFile = req.file;
 
     try {
-        const data = await authService.registerUser(username, email, password, avatarUrl);
+        const data = await authService.registerUser(username, email, password, avatarFile);
 
         res.cookie("accessToken", data.accessToken, {
             httpOnly: true,
