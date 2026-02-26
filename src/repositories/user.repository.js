@@ -8,9 +8,9 @@ const getUserById = async (userId) => {
     return await User.findById(userId).select("-password");
 }
 
-const createUser = async (username, email, password) => {
+const createUser = async (username, email, password, avatarUrl) => {
     return await User.create({
-        username, email, password
+        username, email, password, avatarUrl
     })
 }
 

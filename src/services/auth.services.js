@@ -5,7 +5,7 @@ import { tokenRepository } from "../repositories/token.repository.js";
 import { createError } from "../utils/error.util.js";
 import { tokenService } from "./token.service.js";
 
-const registerUser = async (username, email, password) => {
+const registerUser = async (username, email, password, avatarUrl) => {
 
     if (!username || !email || !password) {
         throw createError("All fields are required", 400);
@@ -18,7 +18,7 @@ const registerUser = async (username, email, password) => {
 
     const hashPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await userRepository.createUser(username, email, hashPassword);
+    const newUser = await userRepository.createUser(username, email, hashPassword, avatarUrl);
 
     const { accessToken, refreshToken } = tokenService.generateTokens(newUser);
 

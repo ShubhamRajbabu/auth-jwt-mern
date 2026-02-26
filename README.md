@@ -44,6 +44,7 @@ The application implements:
 - ✅ **Error Handling** - Centralized error middleware with custom errors
 - ✅ **Layered Architecture** - Clean separation of concerns
 - ✅ **Pagination && Sorting** - Added pagination and sorting for Tasks api
+- ✅ **Image upload using multer** - Added avatar image upload using multer
 
 ---
 
