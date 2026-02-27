@@ -5,7 +5,7 @@ import { avatarUpload } from '../middlewares/multer.middleware.js';
 
 const authRouter = express.Router();
 
-authRouter.post('/register', avatarUpload.single('avatar'), authController.registerController);
+authRouter.post('/register', avatarUpload.single("avatar"), authController.registerController);
 
 authRouter.post('/login', authController.loginController);
 

@@ -44,7 +44,7 @@ The application implements:
 - ✅ **Error Handling** - Centralized error middleware with custom errors
 - ✅ **Layered Architecture** - Clean separation of concerns
 - ✅ **Pagination && Sorting** - Added pagination and sorting for Tasks api
-- ✅ **Image upload using multer and cloudinary** - Added avatar for user while registering using multer and cloudinary
+- ✅ **Various file types upload using multer and cloudinary** - Implemented methods for uploading various file types using multer and cloudinary
 
 ---
 

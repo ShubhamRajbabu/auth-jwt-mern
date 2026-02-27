@@ -1,36 +1,52 @@
 import multer from "multer";
-import path from 'path';
-import fs from 'fs';
+import path from "path";
+import fs from "fs";
 
-const uploadPath = path.join(process.cwd(), "public", "images", "avatar");
+const createUploader = (allowedTypes, folderName, maxSizeMB = 10) => {
 
-if (!fs.existsSync(uploadPath)) {
-    fs.mkdirSync(uploadPath, { recursive: true });
-}
+    const storage = multer.diskStorage({
+        destination: function (req, file, cb) {
+            const uploadPath = path.join(process.cwd(), "public", folderName);
 
-const avatarStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadPath);
-    },
-    filename: function (req, file, cb) {
-        const ext = path.extname(file.originalname);
-        const uniquePrefix = Date.now();
-        cb(null, `${uniquePrefix + '-' + file.fieldname}${ext}`);
-    }
-});
+            if (!fs.existsSync(uploadPath)) {
+                fs.mkdirSync(uploadPath, { recursive: true });
+            }
 
-const avatarFileFilter = (req, file, cb) => {
-    if (!file.mimetype.startsWith('image/')) {
-        // You can always pass an error if something goes wrong:
-        return cb(new Error('Please upload images only'))
-    }
+            cb(null, uploadPath);
+        },
 
-    // To accept the file pass `true`, like so:
-    cb(null, true);
-}
+        filename: function (req, file, cb) {
+            const ext = path.extname(file.originalname);
+            const uniquePrefix = Date.now();
+            cb(null, `${uniquePrefix}-${file.fieldname}${ext}`);
+        }
+    });
 
-export const avatarUpload = multer({
-    storage: avatarStorage,
-    fileFilter: avatarFileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 } // 5 MB limit (in bytes)
-});
+    const fileFilter = (req, file, cb) => {
+        const isAllowed = allowedTypes.some(type =>
+            file.mimetype.startsWith(type)
+        );
+
+        if (!isAllowed) {
+            return cb(new Error("Invalid file type"), false);
+        }
+
+        cb(null, true);
+    };
+
+    return multer({
+        storage,
+        fileFilter,
+        limits: { fileSize: maxSizeMB * 1024 * 1024 }
+    });
+};
+
+export const avatarUpload = createUploader(['image/'], 'images/avatar', 5);
+
+export const videoUpload = createUploader(['video/'], 'videos', 50);
+
+export const fileUpload = createUploader(
+    ['image/', 'video/', 'application/pdf'],
+    'uploads',
+    20
+);
