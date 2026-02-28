@@ -11,7 +11,6 @@ const authMiddleware = (req, res, next) => {
     }
     try {
         const decoded = jwt.verify(accessToken, JWT_SECRET_ACCESS_TOKEN);
-        console.log("Decoded access token: ", decoded);
         if (!decoded) {
             next(createError("Invalid access token", 401));
         }

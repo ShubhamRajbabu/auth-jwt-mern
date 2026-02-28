@@ -45,6 +45,7 @@ The application implements:
 - ✅ **Layered Architecture** - Clean separation of concerns
 - ✅ **Pagination && Sorting** - Added pagination and sorting for Tasks api
 - ✅ **Various file types upload using multer and cloudinary** - Implemented methods for uploading various file types using multer and cloudinary
+- ✅ **Logging mechanism** - Added winston npm package and created an utiliy file for logger.
 
 ---
 
